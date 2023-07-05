@@ -19,11 +19,11 @@
             {% if user.is_authenticated %}
                 <li>
                     <a href="#" class="btn btn-link">{{ user.first_name }}({{ user.username }})</a>
-                    <a href="#" class="btn btn-link">Logout</a>
+                    <a href="{% url 'djangoapp:logout' %}" class="btn btn-link">Logout</a>
                 </li>
             {% else %}
                 <li>
-                    <form action="#" class="form-inline" method="post">
+                    <form action="{% url 'djangoapp:login' %}" class="form-inline" method="post">
                         {% csrf_token %}
                         <div class="input-group">
                             <input type="text" class="form-control" placeholder="Username" name="username">
