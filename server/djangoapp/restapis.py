@@ -1,5 +1,10 @@
 import requests
 import json
+
+from ibm_cloud_sdk_core.authenticators import IAMAuthenticator
+from ibm_watson import NaturalLanguageUnderstandingV1
+from ibm_watson.natural_language_understanding_v1 import Features, SentimentOptions
+
 # import related models here
 from .models import CarDealer, DealerReview
 from requests.auth import HTTPBasicAuth
@@ -121,11 +126,32 @@ def get_dealer_reviews_from_cf(url, **kwargs):
                 sentiment=None,
                 id=review["id"]
             )
+            review_obj.sentiment = analyze_review_sentiments(review_obj.review)
             results.append(review_obj)
 
     return results
+
 
 # Create an `analyze_review_sentiments` method to call Watson NLU and analyze text
 # def analyze_review_sentiments(text):
 # - Call get_request() with specified arguments
 # - Get the returned sentiment label such as Positive or Negative
+def analyze_review_sentiments(text):
+    # print(text)
+    url = "https://api.au-syd.natural-language-understanding.watson.cloud.ibm.com/instances/20fbf20b-c2d8-45ed-b32e-389f8a79033c"
+    api_key = "_OPzI3nGS7mBhw49vBRsT4GemW24VUSwc4v7dbyliESZ"
+    authenticator = IAMAuthenticator(api_key)
+    natural_language_understanding = NaturalLanguageUnderstandingV1(version="2022-04-07",
+                                                                    authenticator=authenticator)
+    natural_language_understanding.set_service_url(url)
+    # using text*3 as the analysis target, in case of getting following errors:
+    # ibm_cloud_sdk_core.api_exception.ApiException: Error: not enough text for language id, Code: 422
+    # ibm_cloud_sdk_core.api_exception.ApiException: Error: target(s) not found, Code: 400
+    response = natural_language_understanding.analyze(
+        text=text * 3,
+        features=Features(sentiment=SentimentOptions(targets=[text * 3]))
+    ).get_result()
+    # print(json.dumps(response, indent=2))
+    label = response["sentiment"]["document"]["label"]
+    print(label)
+    return label
