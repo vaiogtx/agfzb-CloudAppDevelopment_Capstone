@@ -9,7 +9,10 @@ from django.contrib import messages
 from datetime import datetime
 import logging
 import json
-from .restapis import get_dealers_from_cf, get_dealer_by_id, get_dealer_by_state, get_dealer_reviews_from_cf
+
+from .models import CarModel
+from .restapis import get_dealers_from_cf, get_dealer_by_id, get_dealer_by_state, get_dealer_reviews_from_cf, \
+    post_request
 
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
@@ -97,6 +100,34 @@ def get_dealer_details(request, dealer_id):
 
         return HttpResponse(result)
 
+
 # Create a `add_review` view to submit a review
-# def add_review(request, dealer_id):
-# ...
+def add_review(request, dealer_id):
+    context = {}
+    # url = "https://us-south.functions.appdomain.cloud/api/v1/web/9b35b474-b8b3-41bf-b868-020942359cb1/dealership-package/get-dealership"
+    url = "https://us-south.functions.appdomain.cloud/api/v1/web/9b35b474-b8b3-41bf-b868-020942359cb1/dealership-package/post-review"
+    dealer = get_dealer_by_id(url, dealer_id)
+    if request.method == "GET":
+        return render(request, "djangoapp/add_review.html", context)
+    elif request.method == "POST" and request.user.is_authenticated:
+        json_payload = {
+            "review": {
+                "id": 1117,
+                "name": request.user.username,
+                "dealership": dealer_id,
+                # "review": request.POST["content"],
+                "review": "testing post_request",
+                "purchase": bool(request.POST.get("purchase", False)),
+                "another": "field",
+                "purchase_date": datetime.strptime(request.POST["purchase_date"], "%m/%d/%Y").isoformat(),
+                # "car_make": car.make.name,
+                "car_make": "Audi",
+                # "car_model": car.name,
+                "car_model": "TT",
+                # "car_year": car.year.strftime("%Y"),
+                "car_year": 2023
+
+            }
+        }
+        post_request(url, json_payload, dealer_id=dealer_id)  # dealer_id 有沒有送好像沒差
+        return redirect("djangoapp:dealer_details", dealer_id=dealer_id)
